@@ -33,7 +33,6 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: `${process.env.MONGODB_URI}${DB_NAME}`,
-      ttl: null,
     }),
   })
 );
