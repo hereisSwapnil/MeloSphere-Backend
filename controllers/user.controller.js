@@ -27,12 +27,19 @@ const registerUser = wrapAsync(async (req, res) => {
     }
     const newUser = new User({ email, username, dob, gender, name });
     const registeredUser = await User.register(newUser, password);
-    req.login(registeredUser, () => {
-      res.status(200).json({
-        user: req.user,
-        message: "register success",
-      });
-    });
+    let profileImageUrl = `https://ui-avatars.com/api/?name=${name
+      .split(" ")
+      .join("+")}&background=09D95B&size=128&color=000&format=png&length=1`;
+    let user_ = await User.findOne({ email });
+    user_.profileImageUrl = profileImageUrl;
+    await user_.save().then(
+      req.login(user_, () => {
+        res.status(200).json({
+          user: req.user,
+          message: "register success",
+        });
+      })
+    );
   } catch (error) {
     res.status(400).json({
       message: "register failed",

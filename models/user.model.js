@@ -34,6 +34,10 @@ const userSchema = new Schema(
       trim: true,
       required: true,
     },
+    profileImageUrl: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
