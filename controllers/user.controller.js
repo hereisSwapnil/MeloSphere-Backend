@@ -74,4 +74,22 @@ const logoutUser = wrapAsync((req, res) => {
   });
 });
 
-export { registerUser, loginUser, logoutUser, checkUsername };
+const getUser = wrapAsync(async (req, res) => {
+  try {
+    let user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(400).json({
+        message: "User not logged in",
+      });
+    }
+    res.status(200).json({
+      user: user,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "User get failed",
+    });
+  }
+});
+
+export { registerUser, loginUser, logoutUser, checkUsername, getUser };
