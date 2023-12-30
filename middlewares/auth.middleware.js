@@ -1,0 +1,9 @@
+const isLoggedIn = function (req, res, next) {
+  if (req.user) {
+    next();
+  } else {
+    return res.send("NOT ERROR");
+  }
+};
+
+export default isLoggedIn;
