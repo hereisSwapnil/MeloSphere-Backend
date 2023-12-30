@@ -41,26 +41,30 @@ const registerUser = wrapAsync(async (req, res) => {
 });
 
 const loginUser = wrapAsync((req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) {
-      return res.status(500).json({ message: "Authentication error" });
-    }
-
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    req.login(user, (err) => {
+  passport.authenticate(
+    "local",
+    { usernameField: "email", passwordField: "password" },
+    (err, user, info) => {
       if (err) {
-        return res.status(500).json({ message: "Login error" });
+        return res.status(500).json({ message: "Authentication error" });
       }
 
-      res.status(200).json({
-        user: user,
-        message: "Login success",
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Login error" });
+        }
+
+        res.status(200).json({
+          user: user,
+          message: "Login success",
+        });
       });
-    });
-  })(req, res, next);
+    }
+  )(req, res, next);
 });
 
 const logoutUser = wrapAsync((req, res) => {
