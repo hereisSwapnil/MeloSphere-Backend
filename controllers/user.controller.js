@@ -1,6 +1,7 @@
 import wrapAsync from "../utils/asyncHandler.js";
 import User from "../models/user.model.js";
 import passport from "passport";
+import e from "express";
 
 const checkUsername = wrapAsync(async (req, res) => {
   let { username } = req.body;
@@ -43,6 +44,7 @@ const registerUser = wrapAsync(async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "register failed",
+      error: error.message,
     });
   }
 });
@@ -99,6 +101,7 @@ const getUser = wrapAsync(async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "User get failed",
+      error: error.message,
     });
   }
 });
