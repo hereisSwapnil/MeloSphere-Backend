@@ -84,6 +84,11 @@ app.use(express.static("public"));
 app.use(cookieParser());
 app.use(methodOverride("_method"));
 
+// for testing
+app.get("/", (req, res) => {
+  res.send("Working for testing purpose");
+});
+
 // routes import
 import userRoutes from "./routes/user.routes.js";
 import messageRoutes from "./routes/message.routes.js";
