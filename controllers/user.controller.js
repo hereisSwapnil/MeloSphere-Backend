@@ -1,7 +1,11 @@
 import wrapAsync from "../utils/asyncHandler.js";
 import User from "../models/user.model.js";
-import passport from "passport";
-import e from "express";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+
+const createToken = (_id) => {
+  return jwt.sign({ _id }, process.env.SECRET, { expiresIn: "365d" });
+};
 
 const checkUsername = wrapAsync(async (req, res) => {
   let { username } = req.body;
@@ -19,91 +23,64 @@ const checkUsername = wrapAsync(async (req, res) => {
 
 const registerUser = wrapAsync(async (req, res) => {
   try {
-    let { username, password, email, dob, gender, name } = req.body;
-    let user = await User.findOne({ email });
-    if (user) {
+    const { username, password, email, dob, gender, name } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
-        message: "user already exists",
+        message: "User already exists",
       });
     }
-    const newUser = new User({ email, username, dob, gender, name });
-    const registeredUser = await User.register(newUser, password);
-    let profileImageUrl = `https://ui-avatars.com/api/?name=${name
-      .split(" ")
-      .join("+")}&background=09D95B&size=128&color=000&format=png&length=1`;
-    let user_ = await User.findOne({ email });
-    user_.profileImageUrl = profileImageUrl;
-    await user_.save().then(
-      req.login(user_, () => {
-        res.status(200).json({
-          user: req.user,
-          message: "register success",
-        });
-      })
-    );
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      email,
+      username,
+      dob,
+      gender,
+      name,
+      password: hashedPassword,
+    });
+
+    const registeredUser = await newUser.save();
+
+    const token = createToken(registeredUser._id);
+
+    res.status(200).json({ user: registeredUser, token });
   } catch (error) {
     res.status(400).json({
-      message: "register failed",
+      message: "Register failed",
       error: error.message,
     });
   }
 });
 
-const loginUser = wrapAsync((req, res, next) => {
-  passport.authenticate(
-    "local",
-    { usernameField: "email", passwordField: "password" },
-    (err, user, info) => {
-      if (err) {
-        return res.status(500).json({ message: "Authentication error" });
-      }
-
-      if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Login error" });
-        }
-
-        res.status(200).json({
-          user: user,
-          message: "Login success",
-        });
-      });
-    }
-  )(req, res, next);
-});
-
-const logoutUser = wrapAsync((req, res) => {
-  req.logout(() => {
-    {
-      req.session.destroy();
-      res.status(200).json({
-        message: "logout success",
-      });
-    }
-  });
-});
-
-const getUser = wrapAsync(async (req, res) => {
+const loginUser = wrapAsync(async (req, res) => {
   try {
-    let user = await User.findById(req.user._id);
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
     if (!user) {
-      return res.status(400).json({
-        message: "User not logged in",
-      });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
-    res.status(200).json({
-      user: user,
-    });
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (passwordMatch) {
+      const token = createToken(user._id);
+
+      res.status(200).json({
+        user,
+        token,
+      });
+    } else {
+      res.status(401).json({ message: "Invalid credentials" });
+    }
   } catch (error) {
-    res.status(400).json({
-      message: "User get failed",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-export { registerUser, loginUser, logoutUser, checkUsername, getUser };
+export { registerUser, loginUser, checkUsername };

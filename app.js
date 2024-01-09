@@ -1,13 +1,9 @@
 import express from "express";
 import cors from "cors";
-import session from "express-session";
-import MongoStore from "connect-mongo";
+// import session from "express-session";
+// import MongoStore from "connect-mongo";
 import dotenv from "dotenv";
 import { DB_NAME } from "./constants.js";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import passport from "passport";
-import LocalStrategy from "passport-local";
-import User from "./models/user.model.js";
 import cookieParser from "cookie-parser";
 import methodOverride from "method-override";
 
@@ -25,58 +21,6 @@ app.use(async (req, res, next) => {
   res.locals.currUser = req.user;
   next();
 });
-
-app.use(
-  session({
-    secret: process.env.SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: `${process.env.MONGODB_URI}${DB_NAME}`,
-    }),
-  })
-);
-
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: "YOUR_GOOGLE_CLIENT_ID",
-      clientSecret: "YOUR_GOOGLE_CLIENT_SECRET",
-      callbackURL: "YOUR_CALLBACK_URL",
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        let user = await User.findOne({ googleId: profile.id });
-
-        if (user) {
-          return done(null, user);
-        } else {
-          user = new User({
-            googleId: profile.id,
-            username: profile.displayName,
-            email: profile.emails[0].value,
-          });
-
-          await user.save();
-          return done(null, user);
-        }
-      } catch (error) {
-        return done(error, false);
-      }
-    }
-  )
-);
-
-passport.use(
-  new LocalStrategy(
-    { usernameField: "email", passwordField: "password" },
-    User.authenticate()
-  )
-);
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
