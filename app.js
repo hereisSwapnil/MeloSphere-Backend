@@ -86,8 +86,10 @@ app.use(methodOverride("_method"));
 
 // routes import
 import userRoutes from "./routes/user.routes.js";
+import messageRoutes from "./routes/message.routes.js";
 
 // routes declare
 app.use("/user", userRoutes);
+app.use("/message", messageRoutes);
 
 export default app;
